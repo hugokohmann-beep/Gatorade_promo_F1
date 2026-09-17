@@ -4,6 +4,7 @@ Dashboard Streamlit — Data Intelligence Bakery
 
 Rodar:  streamlit run app.py
 """
+import hmac
 import re
 from pathlib import Path
 
@@ -69,6 +70,44 @@ html, body, [class*="css"], .stMarkdown, .stMetric {{ font-family: 'Roboto Conde
 """,
     unsafe_allow_html=True,
 )
+
+
+# ------------------------------------------------------------------ login
+USUARIO_PADRAO = "usuario_padrao"
+SENHA_PADRAO = "admin_123"
+
+
+def checar_login() -> bool:
+    if st.session_state.get("autenticado"):
+        return True
+
+    st.markdown(
+        """<div class="hero"><div style="opacity:.8">PepsiCo · F1 · Gatorade</div>
+        <h1>Promo <span>Gatorade</span> 2026</h1><div style="opacity:.8">Acesso restrito</div>
+        <div class="b" style="left:26px">Bakery.</div><div class="b" style="right:26px">pepsico</div></div>""",
+        unsafe_allow_html=True,
+    )
+    _, meio, _ = st.columns([1, 1.2, 1])
+    with meio:
+        with st.form("login"):
+            st.markdown('<div class="box-title">entrar</div>', unsafe_allow_html=True)
+            usuario = st.text_input("Usuário")
+            senha = st.text_input("Senha", type="password")
+            enviar = st.form_submit_button("Entrar", use_container_width=True)
+
+        if enviar:
+            ok = hmac.compare_digest(usuario.strip(), USUARIO_PADRAO) and hmac.compare_digest(senha, SENHA_PADRAO)
+            if ok:
+                st.session_state["autenticado"] = True
+                st.session_state["usuario"] = usuario.strip()
+                st.rerun()
+            else:
+                st.error("Usuário ou senha inválidos.")
+    return False
+
+
+if not checar_login():
+    st.stop()
 
 
 # ------------------------------------------------------------------ helpers
@@ -167,6 +206,11 @@ with st.sidebar:
         st.caption(f"Atualizado em {pd.Timestamp(caminho.stat().st_mtime, unit='s', tz='UTC').tz_convert('America/Sao_Paulo'):%d/%m/%Y %H:%M}")
     if st.button("🔄 Recarregar arquivo"):
         ler_planilha.clear()
+    st.divider()
+    st.caption(f"Logado como **{st.session_state.get('usuario', '')}**")
+    if st.button("Sair"):
+        st.session_state.clear()
+        st.rerun()
 
 if not caminho.exists():
     st.error(f"Arquivo '{ARQUIVO}' não encontrado. Coloque-o na mesma pasta do app.py: {caminho.parent}")
