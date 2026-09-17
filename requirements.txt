@@ -3,3 +3,4 @@ pandas>=2.0
 plotly>=5.20
 gspread>=6.0
 google-auth>=2.0
+openpyxl>=3.1
